@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthMetrics ML | Clinical Decision Support Dashboard</title>
+    <meta name="description" content="AI-powered clinical decision support system for metabolic health risk assessment using ensemble machine learning.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Light theme */
+            --bg-base: #f6f8fb;
+            --bg-surface: #ffffff;
+            --bg-surface-elevated: #f0f4f8;
+            --bg-surface-hover: #e8eef4;
+            --border-color: rgba(148, 163, 184, 0.22);
+            --border-hover: rgba(99, 102, 241, 0.3);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+
+            --accent-primary: #4f46e5;
+            --accent-primary-rgb: 79, 70, 229;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            --accent-gradient-warm: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+            --accent-gradient-cool: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            --accent-gradient-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --accent-cyan: #0891b2;
+            --accent-emerald: #059669;
+            --accent-amber: #d97706;
+            --accent-rose: #e11d48;
+
+            --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.06);
+            --card-shadow-hover: 0 8px 30px rgba(15, 23, 42, 0.1);
+            --navbar-bg: rgba(255, 255, 255, 0.72);
+
+            --mesh-opacity: 0.03;
+        }
+
+        [data-bs-theme="dark"] {
+            --bg-base: #0a0e1a;
+            --bg-surface: rgba(17, 24, 40, 0.8);
+            --bg-surface-elevated: rgba(30, 41, 59, 0.6);
+            --bg-surface-hover: rgba(40, 52, 72, 0.7);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(139, 92, 246, 0.4);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --accent-primary: #8b5cf6;
+            --accent-primary-rgb: 139, 92, 246;
+            --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%);
+            --accent-gradient-warm: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+            --accent-gradient-cool: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
+            --accent-gradient-emerald: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #34d399;
+            --accent-amber: #fbbf24;
+            --accent-rose: #fb7185;
+
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            --card-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+            --navbar-bg: rgba(10, 14, 26, 0.75);
+
+            --mesh-opacity: 0.06;
+        }
+
+        /* ─── Global ─── */
+        * { box-sizing: border-box; }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            letter-spacing: -0.01em;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient gradient mesh background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(var(--accent-primary-rgb), var(--mesh-opacity)) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, var(--mesh-opacity)) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(16, 185, 129, var(--mesh-opacity)) 0%, transparent 50%);
+            animation: meshFloat 25s ease-in-out infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes meshFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, -3%) rotate(1deg); }
+            66% { transform: translate(-1%, 2%) rotate(-0.5deg); }
+        }
+
+        h1, h2, h3, h4, h5, h6, .display-font {
+            font-family: var(--font-display);
+            letter-spacing: -0.03em;
+        }
+
+        .font-mono { font-family: var(--font-mono); }
+
+        /* ─── Navbar ─── */
+        .glass-navbar {
+            background: var(--navbar-bg);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        .brand-mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(var(--accent-primary-rgb), 0.35);
+        }
+
+        /* ─── Cards ─── */
+        .glass-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            box-shadow: var(--card-shadow-hover);
+            border-color: var(--border-hover);
+        }
+
+        .glass-card-inner {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            transition: all 0.2s ease;
+        }
+
+        /* ─── KPI Cards ─── */
+        .kpi-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .kpi-card .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .kpi-value {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.85rem;
+            line-height: 1;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-accuracy .kpi-icon { background: var(--accent-gradient); }
+        .kpi-roc .kpi-icon { background: var(--accent-gradient-emerald); }
+        .kpi-precision .kpi-icon { background: var(--accent-gradient-cool); }
+        .kpi-recall .kpi-icon { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); }
+        .kpi-f1 .kpi-icon { background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%); }
+
+        .kpi-roc .kpi-value { background: var(--accent-gradient-emerald); -webkit-background-clip: text; background-clip: text; }
+        .kpi-precision .kpi-value { background: var(--accent-gradient-cool); -webkit-background-clip: text; background-clip: text; }
+        .kpi-recall .kpi-value { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); -webkit-background-clip: text; background-clip: text; }
+        .kpi-f1 .kpi-value { background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%); -webkit-background-clip: text; background-clip: text; }
+
+        /* Pulse dot */
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-emerald);
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+            animation: pulse-ring 2s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* ─── Nav Tabs ─── */
+        .nav-pills-modern {
+            background: var(--bg-surface);
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            display: inline-flex;
+            gap: 3px;
+            backdrop-filter: blur(12px);
+        }
+
+        .nav-pills-modern .nav-link {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 9px 18px;
+            border-radius: 10px;
+            transition: all 0.25s ease;
+            border: none;
+        }
+
+        .nav-pills-modern .nav-link:hover {
+            color: var(--text-primary);
+            background: var(--bg-surface-hover);
+        }
+
+        .nav-pills-modern .nav-link.active {
+            color: #ffffff;
+            background: var(--accent-gradient);
+            box-shadow: 0 4px 15px rgba(var(--accent-primary-rgb), 0.35);
+        }
+
+        /* ─── Buttons ─── */
+        .btn-gradient {
+            background: var(--accent-gradient);
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(var(--accent-primary-rgb), 0.3);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-gradient:hover {
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(var(--accent-primary-rgb), 0.45);
+        }
+
+        .btn-gradient:hover::before {
+            left: 100%;
+        }
+
+        .btn-preset {
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface-elevated);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-preset:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-primary);
+            background: rgba(var(--accent-primary-rgb), 0.08);
+            transform: translateY(-1px);
+        }
+
+        /* ─── Form ─── */
+        .form-control, .form-select {
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-surface-elevated);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.15);
+            color: var(--text-primary);
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            letter-spacing: 0.01em;
+        }
+
+        .form-hint {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .input-group-text {
+            background: transparent;
+            border-color: var(--border-color);
+            color: var(--text-muted);
+        }
+
+        /* ─── Biomarker Cards ─── */
+        .biomarker-card {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .biomarker-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .biomarker-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .biomarker-card.flag-high::before { background: var(--accent-gradient-warm); }
+        .biomarker-card.flag-elevated::before { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
+        .biomarker-card.flag-normal::before { background: var(--accent-gradient-emerald); }
+        .biomarker-card.flag-warning::before { background: var(--accent-gradient-cool); }
+
+        /* ─── Risk Gauge ─── */
+        .risk-gauge-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto;
+        }
+
+        .risk-gauge-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .risk-gauge-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        /* ─── Progress Bar ─── */
+        .risk-progress-track {
+            height: 12px;
+            background: var(--bg-surface-elevated);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .risk-progress-bar {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .risk-progress-bar.tier-high {
+            background: var(--accent-gradient-warm);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .risk-progress-bar.tier-mod {
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .risk-progress-bar.tier-low {
+            background: var(--accent-gradient-emerald);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* ─── Tables ─── */
+        .table-modern {
+            color: var(--text-primary);
+            margin-bottom: 0;
+        }
+
+        .table-modern thead th {
+            background: var(--bg-surface-elevated);
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-modern tbody td {
+            padding: 12px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .table-modern tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        .table-modern tbody tr:hover td {
+            background: rgba(var(--accent-primary-rgb), 0.04);
+        }
+
+        /* ─── Badges ─── */
+        .badge-status {
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            letter-spacing: 0.02em;
+        }
+
+        .badge-status.danger {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--accent-rose);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-status.warning {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-status.success {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-status.info {
+            background: rgba(6, 182, 212, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        /* ─── Recommendations ─── */
+        .rec-item {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 16px;
+            transition: all 0.2s ease;
+        }
+
+        .rec-item:hover {
+            border-color: var(--border-hover);
+        }
+
+        .rec-item.urgency-high { border-left: 3px solid var(--accent-rose); }
+        .rec-item.urgency-moderate { border-left: 3px solid var(--accent-amber); }
+        .rec-item.urgency-low { border-left: 3px solid var(--accent-emerald); }
+
+        /* ─── Dropzone ─── */
+        .dropzone-box {
+            border: 2px dashed var(--border-color);
+            background: var(--bg-surface-elevated);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            transition: all 0.25s ease;
+        }
+
+        .dropzone-box:hover,
+        .dropzone-box.dragover {
+            border-color: var(--accent-primary);
+            background: rgba(var(--accent-primary-rgb), 0.05);
+        }
+
+        /* ─── Confidence Interval Bar ─── */
+        .ci-bar {
+            position: relative;
+            height: 28px;
+            background: var(--bg-surface-elevated);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            overflow: visible;
+        }
+
+        .ci-range {
+            position: absolute;
+            top: 4px;
+            height: 20px;
+            border-radius: 6px;
+            opacity: 0.25;
+            transition: all 1s ease;
+        }
+
+        .ci-point {
+            position: absolute;
+            top: 2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: left 1s ease;
+            z-index: 2;
+        }
+
+        /* ─── Scroll Animation ─── */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Stagger children */
+        .stagger > * {
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUp 0.4s ease forwards;
+        }
+        .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+        .stagger > *:nth-child(2) { animation-delay: 0.1s; }
+        .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+        .stagger > *:nth-child(4) { animation-delay: 0.2s; }
+        .stagger > *:nth-child(5) { animation-delay: 0.25s; }
+
+        /* ─── Footer ─── */
+        .site-footer {
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+        }
+
+        /* ─── Section Headers ─── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .section-header .icon-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        /* ─── Animated Counter ─── */
+        .counter-value {
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        /* ─── Live indicator input ─── */
+        .input-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+        .input-status-dot.normal { background: var(--accent-emerald); }
+        .input-status-dot.elevated { background: var(--accent-amber); }
+        .input-status-dot.high { background: var(--accent-rose); }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .kpi-value { font-size: 1.4rem; }
+            .risk-gauge-container { width: 180px; height: 180px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══ Header Navigation ═══ -->
+    <nav class="glass-navbar px-3 py-2">
+        <div class="container-fluid px-lg-4 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-mark">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold fs-5 display-font mb-0">HealthMetrics</span>
+                        <span class="badge rounded-pill px-2 py-1 small" style="background: var(--accent-gradient); color: white; font-weight: 600;">ML</span>
+                    </div>
+                    <small class="text-secondary d-none d-sm-block" style="font-size: 0.75rem;">
+                        <span class="pulse-dot me-1"></span> Clinical Decision Support Engine — v2.0
+                    </small>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm d-flex align-items-center gap-2 rounded-pill px-3" id="themeToggleBtn" onclick="toggleTheme()" style="border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary);">
+                    <i class="bi bi-sun-fill" id="themeIcon"></i>
+                    <span class="d-none d-md-inline" id="themeText">Theme</span>
+                </button>
+                <a href="/admin/" target="_blank" class="btn btn-sm rounded-pill px-3" style="border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary);">
+                    <i class="bi bi-shield-lock me-1"></i><span class="d-none d-md-inline">Admin</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══ Main Content ═══ -->
+    <main class="container-fluid px-lg-4 py-4">
+
+        <!-- Notifications -->
+        {% if error %}
+        <div class="alert alert-dismissible fade show glass-card border-0 d-flex align-items-center gap-3 mb-4 fade-in-up" role="alert" style="border-left: 4px solid var(--accent-rose) !important;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(239,68,68,0.12); flex-shrink: 0;">
+                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+            </div>
+            <div class="flex-grow-1">
+                <strong class="small text-uppercase" style="color: var(--accent-rose);">Validation Error</strong>
+                <div class="small mt-1">{{ error }}</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        {% if success_msg %}
+        <div class="alert alert-dismissible fade show glass-card border-0 d-flex align-items-center gap-3 mb-4 fade-in-up" role="alert" style="border-left: 4px solid var(--accent-emerald) !important;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(16,185,129,0.12); flex-shrink: 0;">
+                <i class="bi bi-check-circle-fill" style="color: var(--accent-emerald);"></i>
+            </div>
+            <div class="flex-grow-1">
+                <strong class="small text-uppercase" style="color: var(--accent-emerald);">Success</strong>
+                <div class="small mt-1">{{ success_msg }}</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <!-- ═══ Model KPI Dashboard ═══ -->
+        <section class="row g-3 mb-4 stagger" aria-label="Model Performance Metrics">
+            <div class="col-6 col-xl">
+                <div class="kpi-card kpi-accuracy p-3 h-100">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="kpi-icon"><i class="bi bi-shield-check"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="text-muted small fw-semibold mb-1" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Accuracy</div>
+                            <div class="kpi-value" data-count="{{ metrics.accuracy }}">0%</div>
+                            <div class="text-muted small mt-1" style="font-size: 0.7rem;">Ensemble Classifier</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl">
+                <div class="kpi-card kpi-roc p-3 h-100">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="kpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="text-muted small fw-semibold mb-1" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">ROC-AUC</div>
+                            <div class="kpi-value" data-count="{{ metrics.roc_auc }}">0%</div>
+                            <div class="text-muted small mt-1" style="font-size: 0.7rem;">Discrimination Power</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl">
+                <div class="kpi-card kpi-precision p-3 h-100">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="kpi-icon"><i class="bi bi-bullseye"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="text-muted small fw-semibold mb-1" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Precision</div>
+                            <div class="kpi-value" data-count="{{ metrics.precision }}">0%</div>
+                            <div class="text-muted small mt-1" style="font-size: 0.7rem;">Positive Predictive</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl">
+                <div class="kpi-card kpi-recall p-3 h-100">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="kpi-icon"><i class="bi bi-heart-pulse"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="text-muted small fw-semibold mb-1" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Recall</div>
+                            <div class="kpi-value" data-count="{{ metrics.recall }}">0%</div>
+                            <div class="text-muted small mt-1" style="font-size: 0.7rem;">Sensitivity</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl">
+                <div class="kpi-card kpi-f1 p-3 h-100">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="kpi-icon"><i class="bi bi-speedometer2"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="text-muted small fw-semibold mb-1" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">F1 Score</div>
+                            <div class="kpi-value" data-count="{{ metrics.f1_score }}">0%</div>
+                            <div class="text-muted small mt-1" style="font-size: 0.7rem;">Harmonic Mean</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══ Navigation Tabs ═══ -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <ul class="nav nav-pills-modern" id="modeTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="single-tab" data-bs-toggle="pill" data-bs-target="#single-pane" type="button" role="tab">
+                        <i class="bi bi-person-heart me-1"></i> Patient Assessment
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="batch-tab" data-bs-toggle="pill" data-bs-target="#batch-pane" type="button" role="tab">
+                        <i class="bi bi-people me-1"></i> Cohort Screening
+                        {% if batch_summary %}
+                        <span class="badge bg-white text-dark ms-1 rounded-pill" style="font-size: 0.65rem;">{{ batch_summary.total }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#history-pane" type="button" role="tab">
+                        <i class="bi bi-clock-history me-1"></i> Records
+                        {% if total_records %}
+                        <span class="badge bg-white bg-opacity-25 ms-1 rounded-pill" style="font-size: 0.65rem;">{{ total_records }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+            </ul>
+
+            <div class="text-muted small d-none d-md-flex align-items-center gap-3" style="font-size: 0.72rem;">
+                <span><i class="bi bi-cpu me-1"></i> {{ metrics.model_type|default:"Ensemble" }}</span>
+                <span><i class="bi bi-database me-1"></i> {{ metrics.n_train_samples|default:"5000" }} samples</span>
+            </div>
+        </div>
+
+        <!-- ═══ Tab Panes ═══ -->
+        <div class="tab-content" id="modeTabContent">
+
+            <!-- ═══ TAB 1: Single Patient ═══ -->
+            <div class="tab-pane fade show active" id="single-pane" role="tabpanel">
+                <div class="row g-4">
+                    
+                    <!-- Form Column -->
+                    <div class="col-xl-5 col-lg-6">
+                        <div class="glass-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <div class="section-header">
+                                        <div class="icon-box" style="background: var(--accent-gradient);">
+                                            <i class="bi bi-clipboard2-pulse"></i>
+                                        </div>
+                                        <h5 class="fw-bold mb-0">Patient Intake</h5>
+                                    </div>
+                                    <small class="text-muted ms-5 ps-2">Enter biometric vitals for risk assessment</small>
+                                </div>
+                            </div>
+
+                            <!-- Quick Presets -->
+                            <div class="mb-4 p-3 glass-card-inner">
+                                <div class="text-muted small fw-semibold mb-2 d-flex align-items-center gap-2" style="font-size: 0.75rem;">
+                                    <i class="bi bi-lightning-charge-fill" style="color: var(--accent-amber);"></i> Quick Presets
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-preset" onclick="fillPreset('healthy')">
+                                        <span class="input-status-dot normal me-1"></span> Healthy
+                                    </button>
+                                    <button type="button" class="btn btn-preset" onclick="fillPreset('borderline')">
+                                        <span class="input-status-dot elevated me-1"></span> Pre-Diabetic
+                                    </button>
+                                    <button type="button" class="btn btn-preset" onclick="fillPreset('highrisk')">
+                                        <span class="input-status-dot high me-1"></span> High Risk
+                                    </button>
+                                    <button type="button" class="btn btn-preset" onclick="fillPreset('elderly')">
+                                        <span class="input-status-dot elevated me-1"></span> Elderly
+                                    </button>
+                                </div>
+                            </div>
+
+                            <form method="POST" id="singlePatientForm" action="{% url 'analytics:dashboard' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="single_predict" value="1">
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="patient_name">Patient Name</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text border-end-0"><i class="bi bi-person"></i></span>
+                                        <input type="text" id="patient_name" name="name" class="form-control border-start-0" placeholder="e.g. Eleanor Vance" value="{{ form_data.name }}">
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="glucose_input">
+                                            Fasting Glucose <span class="text-danger">*</span>
+                                            <span class="input-status-dot ms-1" id="glucose_dot"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.1" min="20" max="600" id="glucose_input" name="glucose" class="form-control" required value="{{ form_data.glucose }}" oninput="updateInputStatus('glucose', this.value)">
+                                            <span class="input-group-text small">mg/dL</span>
+                                        </div>
+                                        <div class="form-hint">Normal: 70 – 99 mg/dL</div>
+                                    </div>
+
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="bmi_input">
+                                            BMI <span class="text-danger">*</span>
+                                            <span class="input-status-dot ms-1" id="bmi_dot"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.1" min="10" max="80" id="bmi_input" name="bmi" class="form-control" required value="{{ form_data.bmi }}" oninput="updateInputStatus('bmi', this.value)">
+                                            <span class="input-group-text small">kg/m²</span>
+                                        </div>
+                                        <div class="form-hint">Normal: 18.5 – 24.9</div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-sm-4">
+                                        <label class="form-label" for="age_input">
+                                            Age <span class="text-danger">*</span>
+                                            <span class="input-status-dot ms-1" id="age_dot"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" min="1" max="125" id="age_input" name="age" class="form-control" required value="{{ form_data.age }}" oninput="updateInputStatus('age', this.value)">
+                                            <span class="input-group-text small">yrs</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-4">
+                                        <label class="form-label" for="bp_input">
+                                            Blood Pressure <span class="text-danger">*</span>
+                                            <span class="input-status-dot ms-1" id="bp_dot"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.1" min="30" max="250" id="bp_input" name="bp" class="form-control" required value="{{ form_data.bp }}" oninput="updateInputStatus('bp', this.value)">
+                                            <span class="input-group-text small">mmHg</span>
+                                        </div>
+                                        <div class="form-hint">Optimal: < 80</div>
+                                    </div>
+
+                                    <div class="col-sm-4">
+                                        <label class="form-label" for="insulin_input">
+                                            Insulin <span class="text-danger">*</span>
+                                            <span class="input-status-dot ms-1" id="insulin_dot"></span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.1" min="0" max="1000" id="insulin_input" name="insulin" class="form-control" required value="{{ form_data.insulin }}" oninput="updateInputStatus('insulin', this.value)">
+                                            <span class="input-group-text small">µIU/mL</span>
+                                        </div>
+                                        <div class="form-hint">Normal: 16 – 100</div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-gradient w-100 py-2 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.95rem;">
+                                    <i class="bi bi-cpu fs-5"></i> Run Risk Analysis
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Results Column -->
+                    <div class="col-xl-7 col-lg-6">
+                        {% if result %}
+                        <div class="glass-card p-4 mb-4 fade-in-up">
+                            <!-- Header -->
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-3 mb-4" style="border-bottom: 1px solid var(--border-color);">
+                                <div>
+                                    <span class="text-muted small text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.06em;">Analysis Complete</span>
+                                    <h4 class="fw-bold mb-0">{{ result.patient_name }}</h4>
+                                </div>
+                                <span class="badge-status {{ result.tier_color }}" style="font-size: 0.85rem; padding: 8px 16px;">
+                                    <i class="bi bi-heart-pulse-fill me-1"></i> {{ result.risk_tier }}
+                                </span>
+                            </div>
+
+                            <!-- Risk Gauge + Interpretation -->
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-5 text-center">
+                                    <div class="risk-gauge-container">
+                                        <canvas id="riskGauge" width="220" height="220"></canvas>
+                                        <div class="risk-gauge-label">
+                                            <div class="font-mono fw-bold" style="font-size: 2.5rem; color: var(--text-primary);">{{ result.risk_percentage }}<small style="font-size: 1rem;">%</small></div>
+                                            <div class="text-muted small" style="font-size: 0.72rem;">Disease Probability</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-7 d-flex flex-column justify-content-center">
+                                    <p class="text-secondary small mb-3" style="line-height: 1.7;">{{ result.interpretation }}</p>
+
+                                    <!-- Confidence Interval -->
+                                    <div class="glass-card-inner p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted small fw-semibold" style="font-size: 0.72rem;">95% Confidence Interval</span>
+                                            <span class="font-mono small fw-bold">{{ result.ci_lower }}% – {{ result.ci_upper }}%</span>
+                                        </div>
+                                        <div class="ci-bar">
+                                            <div class="ci-range {% if result.risk_percentage >= 50 %}bg-danger{% elif result.risk_percentage >= 30 %}bg-warning{% else %}bg-success{% endif %}"
+                                                 style="left: {{ result.ci_lower }}%; width: {{ result.ci_width }}%;"></div>
+                                            <div class="ci-point {% if result.risk_percentage >= 50 %}bg-danger{% elif result.risk_percentage >= 30 %}bg-warning{% else %}bg-success{% endif %}"
+                                                 style="left: {{ result.risk_percentage }}%;"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between text-muted mt-1" style="font-size: 0.65rem;">
+                                            <span>0%</span><span>50%</span><span>100%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Biomarkers -->
+                            <div class="section-header mb-3">
+                                <div class="icon-box" style="background: var(--accent-gradient-cool);">
+                                    <i class="bi bi-clipboard2-data"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0">Biomarker Analysis</h6>
+                            </div>
+                            <div class="row g-2 mb-4 stagger">
+                                {% for bio in result.biomarkers %}
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="biomarker-card flag-{{ bio.flag }} h-100">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="fw-bold small">{{ bio.name }}</span>
+                                            <span class="badge-status {{ bio.badge }}" style="font-size: 0.65rem;">{{ bio.status }}</span>
+                                        </div>
+                                        <div class="font-mono fw-bold fs-5 mb-1">{{ bio.value }} <small class="text-muted fw-normal" style="font-size: 0.72rem;">{{ bio.unit }}</small></div>
+                                        <div class="text-muted" style="font-size: 0.68rem;">Ref: {{ bio.range }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Feature Importance -->
+                            <div class="section-header mb-3">
+                                <div class="icon-box" style="background: var(--accent-gradient);">
+                                    <i class="bi bi-bar-chart-line"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0">Feature Impact Attribution</h6>
+                            </div>
+                            <div class="glass-card-inner p-3 mb-4">
+                                <canvas id="featureChart" height="100"></canvas>
+                            </div>
+
+                            <!-- Recommendations -->
+                            <div class="section-header mb-3">
+                                <div class="icon-box" style="background: var(--accent-gradient-emerald);">
+                                    <i class="bi bi-clipboard-pulse"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0">Clinical Recommendations</h6>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                {% for rec in result.recommendations %}
+                                <div class="rec-item urgency-{{ rec.urgency }}">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <span style="font-size: 1.1rem;">{{ rec.icon }}</span>
+                                        <div>
+                                            <strong class="small">{{ rec.category }}</strong>
+                                            <div class="text-secondary small mt-1" style="line-height: 1.6;">{{ rec.text }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Chart Script -->
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // Risk Gauge (Doughnut)
+                                const gaugeCanvas = document.getElementById('riskGauge');
+                                if (gaugeCanvas) {
+                                    const riskVal = {{ result.risk_percentage }};
+                                    const remaining = 100 - riskVal;
+                                    let gaugeColor;
+                                    if (riskVal >= 50) gaugeColor = '#ef4444';
+                                    else if (riskVal >= 30) gaugeColor = '#f59e0b';
+                                    else gaugeColor = '#10b981';
+
+                                    new Chart(gaugeCanvas.getContext('2d'), {
+                                        type: 'doughnut',
+                                        data: {
+                                            datasets: [{
+                                                data: [riskVal, remaining],
+                                                backgroundColor: [gaugeColor, 'rgba(148, 163, 184, 0.08)'],
+                                                borderWidth: 0,
+                                                borderRadius: 6
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: true,
+                                            cutout: '80%',
+                                            rotation: -90,
+                                            circumference: 360,
+                                            plugins: {
+                                                legend: { display: false },
+                                                tooltip: { enabled: false }
+                                            },
+                                            animation: {
+                                                animateRotate: true,
+                                                duration: 1500,
+                                                easing: 'easeOutQuart'
+                                            }
+                                        }
+                                    });
+                                }
+
+                                // Feature Importance Bar Chart
+                                const featCanvas = document.getElementById('featureChart');
+                                if (featCanvas) {
+                                    const ctx = featCanvas.getContext('2d');
+                                    const labels = [{% for f in result.factor_breakdown %}'{{ f.feature }}',{% endfor %}];
+                                    const dataVals = [{% for f in result.factor_breakdown %}{{ f.weight }},{% endfor %}];
+
+                                    const colors = ['#8b5cf6', '#6366f1', '#3b82f6', '#06b6d4', '#10b981'];
+
+                                    new Chart(ctx, {
+                                        type: 'bar',
+                                        data: {
+                                            labels: labels,
+                                            datasets: [{
+                                                label: 'Relative Impact (%)',
+                                                data: dataVals,
+                                                backgroundColor: colors.slice(0, labels.length),
+                                                borderRadius: 8,
+                                                barThickness: 18
+                                            }]
+                                        },
+                                        options: {
+                                            indexAxis: 'y',
+                                            responsive: true,
+                                            maintainAspectRatio: true,
+                                            plugins: {
+                                                legend: { display: false },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: (c) => ` Impact: ${c.parsed.x}%`
+                                                    }
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                                                    ticks: { callback: (v) => v + '%', color: 'var(--text-muted)' }
+                                                },
+                                                y: {
+                                                    grid: { display: false },
+                                                    ticks: { color: 'var(--text-secondary)' }
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        </script>
+                        {% else %}
+                        <!-- Empty State -->
+                        <div class="glass-card p-5 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 400px;">
+                            <div class="p-4 rounded-circle mb-4" style="background: rgba(var(--accent-primary-rgb), 0.08);">
+                                <i class="bi bi-heart-pulse fs-1" style="color: var(--accent-primary);"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">Ready for Assessment</h5>
+                            <p class="text-muted small mb-4" style="max-width: 420px; line-height: 1.7;">
+                                Enter patient biometric data on the left or use a quick preset to generate an instant AI-powered metabolic risk evaluation with clinical guidance.
+                            </p>
+                            <div class="d-flex flex-wrap justify-content-center gap-2">
+                                <button type="button" class="btn btn-sm rounded-pill px-3" style="border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary);" onclick="fillPreset('healthy')">
+                                    <span class="input-status-dot normal me-1"></span> Try Normal Case
+                                </button>
+                                <button type="button" class="btn btn-sm rounded-pill px-3" style="border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary);" onclick="fillPreset('highrisk')">
+                                    <span class="input-status-dot high me-1"></span> Try High Risk Case
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ TAB 2: Batch Screening ═══ -->
+            <div class="tab-pane fade" id="batch-pane" role="tabpanel">
+                <div class="row g-4">
+                    
+                    <div class="col-lg-4">
+                        <div class="glass-card p-4 h-100">
+                            <div class="section-header mb-1">
+                                <div class="icon-box" style="background: var(--accent-gradient-cool);">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0">Cohort Upload</h5>
+                            </div>
+                            <p class="text-muted small mb-4 ms-5 ps-2">Upload a CSV file to screen an entire patient population.</p>
+
+                            <form method="POST" enctype="multipart/form-data" action="{% url 'analytics:dashboard' %}" class="mb-4">
+                                {% csrf_token %}
+                                <input type="hidden" name="batch_predict" value="1">
+                                
+                                <div class="dropzone-box mb-3" id="dropzone">
+                                    <i class="bi bi-cloud-arrow-up fs-2 d-block mb-2" style="color: var(--accent-primary);"></i>
+                                    <label for="csv_file" class="form-label fw-bold mb-1 small">Drop CSV or click to browse</label>
+                                    <p class="text-muted small mb-2" style="font-size: 0.72rem;">Required: glucose, bmi, age, bp, insulin</p>
+                                    <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
+                                </div>
+
+                                <button type="submit" class="btn btn-gradient w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-cpu"></i> Score Cohort
+                                </button>
+                            </form>
+
+                            <hr style="border-color: var(--border-color);">
+
+                            <div class="glass-card-inner p-3">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-filetype-csv" style="color: var(--accent-primary);"></i>
+                                    <span class="fw-bold small">Sample Dataset</span>
+                                </div>
+                                <p class="text-muted small mb-3" style="font-size: 0.72rem;">
+                                    10 pre-structured patient profiles for testing.
+                                </p>
+                                <a href="{% url 'analytics:download_sample_csv' %}" class="btn btn-sm w-100 rounded-pill" style="border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary);">
+                                    <i class="bi bi-download me-1"></i> Download Sample CSV
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-8">
+                        {% if batch_records %}
+                        <div class="glass-card p-4 fade-in-up">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+                                <div>
+                                    <h5 class="fw-bold mb-0">Stratification Results</h5>
+                                    <span class="text-muted small">Scored patient preview</span>
+                                </div>
+                                <a href="{% url 'analytics:export_batch_csv' %}" class="btn btn-sm d-flex align-items-center gap-1 rounded-pill px-3" style="background: var(--accent-gradient-emerald); color: white; border: none;">
+                                    <i class="bi bi-download"></i> Export CSV
+                                </a>
+                            </div>
+
+                            <!-- Summary KPIs -->
+                            <div class="row g-3 mb-4 stagger">
+                                <div class="col-sm-3 col-6">
+                                    <div class="glass-card-inner p-3 text-center">
+                                        <span class="text-muted small text-uppercase" style="font-size: 0.68rem;">Total</span>
+                                        <div class="font-mono fw-bold fs-4" style="color: var(--accent-primary);">{{ batch_summary.total }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3 col-6">
+                                    <div class="glass-card-inner p-3 text-center">
+                                        <span class="text-muted small text-uppercase" style="font-size: 0.68rem;">High Risk</span>
+                                        <div class="font-mono fw-bold fs-4" style="color: var(--accent-rose);">{{ batch_summary.high_risk }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3 col-6">
+                                    <div class="glass-card-inner p-3 text-center">
+                                        <span class="text-muted small text-uppercase" style="font-size: 0.68rem;">Moderate</span>
+                                        <div class="font-mono fw-bold fs-4" style="color: var(--accent-amber);">{{ batch_summary.moderate_risk }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3 col-6">
+                                    <div class="glass-card-inner p-3 text-center">
+                                        <span class="text-muted small text-uppercase" style="font-size: 0.68rem;">Avg Risk</span>
+                                        <div class="font-mono fw-bold fs-4" style="color: var(--accent-cyan);">{{ batch_summary.avg_risk }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Distribution Chart -->
+                            <div class="glass-card-inner p-3 mb-4 d-flex flex-column flex-md-row align-items-center gap-4">
+                                <div style="width: 160px; height: 160px; flex-shrink: 0;">
+                                    <canvas id="batchDonutChart"></canvas>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-2 small">Risk Distribution</h6>
+                                    <p class="text-muted small mb-2">
+                                        <strong>{{ batch_summary.high_risk }}</strong> flagged for immediate review.
+                                        <strong>{{ batch_summary.moderate_risk }}</strong> for preventative care.
+                                    </p>
+                                    <div class="d-flex flex-wrap gap-3 small">
+                                        <span><i class="bi bi-circle-fill me-1" style="color: var(--accent-rose);"></i> High (≥50%)</span>
+                                        <span><i class="bi bi-circle-fill me-1" style="color: var(--accent-amber);"></i> Moderate (30–49%)</span>
+                                        <span><i class="bi bi-circle-fill me-1" style="color: var(--accent-emerald);"></i> Low (<30%)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Table -->
+                            <div class="table-responsive rounded-3" style="border: 1px solid var(--border-color);">
+                                <table class="table table-modern table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient</th>
+                                            <th>Glucose</th>
+                                            <th>BMI</th>
+                                            <th>Age</th>
+                                            <th>BP</th>
+                                            <th>Insulin</th>
+                                            <th>Risk %</th>
+                                            <th>Tier</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in batch_records %}
+                                        <tr>
+                                            <td class="fw-semibold">{{ row.name|default:"Patient" }}</td>
+                                            <td>{{ row.glucose }}</td>
+                                            <td>{{ row.bmi }}</td>
+                                            <td>{{ row.age }}</td>
+                                            <td>{{ row.bp }}</td>
+                                            <td>{{ row.insulin }}</td>
+                                            <td class="font-mono fw-bold">{{ row.Risk_Probability }}%</td>
+                                            <td>
+                                                <span class="badge-status {% if row.Risk_Tier == 'High Risk' %}danger{% elif row.Risk_Tier == 'Moderate Risk' %}warning{% else %}success{% endif %}">
+                                                    {{ row.Risk_Tier }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const donutCanvas = document.getElementById('batchDonutChart');
+                                if (donutCanvas) {
+                                    new Chart(donutCanvas.getContext('2d'), {
+                                        type: 'doughnut',
+                                        data: {
+                                            labels: ['High Risk', 'Moderate Risk', 'Low Risk'],
+                                            datasets: [{
+                                                data: [{{ batch_summary.high_risk }}, {{ batch_summary.moderate_risk }}, {{ batch_summary.low_risk }}],
+                                                backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                                                borderWidth: 0,
+                                                borderRadius: 4,
+                                                hoverOffset: 6
+                                            }]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            plugins: { legend: { display: false } },
+                                            cutout: '72%',
+                                            animation: { duration: 1200, easing: 'easeOutQuart' }
+                                        }
+                                    });
+                                }
+                            });
+                        </script>
+                        {% else %}
+                        <div class="glass-card p-5 text-center h-100 d-flex flex-column align-items-center justify-content-center" style="min-height: 350px;">
+                            <div class="p-4 rounded-circle mb-4" style="background: rgba(6, 182, 212, 0.08);">
+                                <i class="bi bi-cloud-arrow-up fs-1" style="color: var(--accent-cyan);"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">No Cohort Uploaded</h5>
+                            <p class="text-muted small mb-4" style="max-width: 440px; line-height: 1.7;">
+                                Upload a CSV on the left to batch-score patients. Results include risk probabilities and tier stratification for each record.
+                            </p>
+                            <a href="{% url 'analytics:download_sample_csv' %}" class="btn btn-sm rounded-pill px-3" style="border: 1px solid var(--border-color); background: var(--bg-surface-elevated); color: var(--text-secondary);">
+                                <i class="bi bi-download me-1"></i> Download Sample CSV
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ TAB 3: Records History ═══ -->
+            <div class="tab-pane fade" id="history-pane" role="tabpanel">
+                <div class="glass-card p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                        <div>
+                            <div class="section-header mb-1">
+                                <div class="icon-box" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0">Assessment History</h5>
+                            </div>
+                            <small class="text-muted ms-5 ps-2">All patient evaluations stored in the database</small>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="text" id="historySearchInput" onkeyup="filterHistoryTable()" class="form-control form-control-sm" placeholder="Search..." style="max-width: 180px; border-radius: 10px;">
+                            <form method="POST" action="{% url 'analytics:clear_history' %}" onsubmit="return confirm('Delete all patient records?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm rounded-pill px-3" style="border: 1px solid rgba(239,68,68,0.3); color: var(--accent-rose); background: transparent;">
+                                    <i class="bi bi-trash3 me-1"></i> Clear
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    {% if total_records %}
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-4">
+                            <div class="glass-card-inner p-3 d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(var(--accent-primary-rgb), 0.1); flex-shrink: 0;">
+                                    <i class="bi bi-people" style="color: var(--accent-primary);"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted small" style="font-size: 0.68rem;">Total Evaluations</div>
+                                    <div class="font-mono fw-bold">{{ total_records }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="glass-card-inner p-3 d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(239,68,68,0.1); flex-shrink: 0;">
+                                    <i class="bi bi-exclamation-triangle" style="color: var(--accent-rose);"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted small" style="font-size: 0.68rem;">High Risk Flagged</div>
+                                    <div class="font-mono fw-bold" style="color: var(--accent-rose);">{{ high_risk_records }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="glass-card-inner p-3 d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: rgba(16,185,129,0.1); flex-shrink: 0;">
+                                    <i class="bi bi-graph-up" style="color: var(--accent-emerald);"></i>
+                                </div>
+                                <div>
+                                    <div class="text-muted small" style="font-size: 0.68rem;">Avg Risk Score</div>
+                                    <div class="font-mono fw-bold">{{ avg_risk_history }}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if recent_patients %}
+                    <div class="table-responsive rounded-3" style="border: 1px solid var(--border-color);">
+                        <table class="table table-modern table-hover align-middle" id="historyTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Timestamp</th>
+                                    <th>Glucose</th>
+                                    <th>BMI</th>
+                                    <th>Age</th>
+                                    <th>BP</th>
+                                    <th>Insulin</th>
+                                    <th>Risk</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in recent_patients %}
+                                <tr>
+                                    <td class="fw-semibold">
+                                        <i class="bi bi-person-badge me-1" style="color: var(--accent-primary);"></i> {{ p.name }}
+                                    </td>
+                                    <td class="text-muted small font-mono">{{ p.created_at|date:"M d, Y H:i" }}</td>
+                                    <td>{{ p.glucose }}</td>
+                                    <td>{{ p.bmi }}</td>
+                                    <td>{{ p.age }}</td>
+                                    <td>{{ p.bp }}</td>
+                                    <td>{{ p.insulin }}</td>
+                                    <td class="font-mono fw-bold">{{ p.risk_percentage }}%</td>
+                                    <td>
+                                        <span class="badge-status {{ p.badge_class }}">
+                                            {{ p.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2" style="color: var(--text-muted);"></i>
+                        <p class="mb-0">No evaluations recorded yet.</p>
+                        <small>Run a patient assessment to start building history.</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="site-footer py-4 mt-5">
+        <div class="container-fluid px-lg-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-2 mb-md-0">
+                        <div class="brand-mark" style="width: 28px; height: 28px; border-radius: 8px; font-size: 0.8rem;">
+                            <i class="bi bi-heart-pulse"></i>
+                        </div>
+                        <span class="fw-bold small display-font">HealthMetrics ML</span>
+                        <span class="badge rounded-pill px-2 py-1" style="background: var(--bg-surface-elevated); color: var(--text-muted); font-size: 0.65rem; border: 1px solid var(--border-color);">v2.0</span>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted" style="font-size: 0.7rem; line-height: 1.6;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        This tool provides decision-support analysis only. It does not constitute medical diagnosis. 
+                        Always consult qualified healthcare professionals for clinical decisions.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ─── Theme Toggle ───
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-bs-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', target);
+            localStorage.setItem('healthmetrics_theme', target);
+            updateThemeUI(target);
+        }
+
+        function updateThemeUI(theme) {
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+            if (theme === 'dark') {
+                icon.className = 'bi bi-sun-fill';
+                text.textContent = 'Light';
+            } else {
+                icon.className = 'bi bi-moon-stars-fill';
+                text.textContent = 'Dark';
+            }
+        }
+
+        (function() {
+            const saved = localStorage.getItem('healthmetrics_theme') || 'dark';
+            document.documentElement.setAttribute('data-bs-theme', saved);
+            updateThemeUI(saved);
+        })();
+
+        // ─── Animated Counters ───
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[data-count]').forEach(el => {
+                const target = parseFloat(el.getAttribute('data-count'));
+                const duration = 1200;
+                const startTime = performance.now();
+                
+                function updateCounter(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    const current = (target * eased).toFixed(1);
+                    el.textContent = current + '%';
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        el.textContent = target + '%';
+                    }
+                }
+                
+                requestAnimationFrame(updateCounter);
+            });
+        });
+
+        // ─── Preset Profiles ───
+        const presets = {
+            healthy: {
+                name: 'Clara Hayes',
+                glucose: 86.0,
+                bmi: 21.8,
+                age: 32,
+                bp: 72.0,
+                insulin: 45.0
+            },
+            borderline: {
+                name: 'Samuel Rivera',
+                glucose: 116.0,
+                bmi: 27.9,
+                age: 49,
+                bp: 84.0,
+                insulin: 115.0
+            },
+            highrisk: {
+                name: 'Margaret Thompson',
+                glucose: 172.0,
+                bmi: 34.6,
+                age: 62,
+                bp: 94.0,
+                insulin: 195.0
+            },
+            elderly: {
+                name: 'Robert Patterson',
+                glucose: 128.0,
+                bmi: 29.2,
+                age: 71,
+                bp: 88.0,
+                insulin: 130.0
+            }
+        };
+
+        function fillPreset(type) {
+            const data = presets[type];
+            if (!data) return;
+            
+            // Smooth transition effect
+            const form = document.getElementById('singlePatientForm');
+            if (form) {
+                form.style.transition = 'opacity 0.2s';
+                form.style.opacity = '0.7';
+                setTimeout(() => { form.style.opacity = '1'; }, 200);
+            }
+
+            document.getElementById('patient_name').value = data.name;
+            document.getElementById('glucose_input').value = data.glucose;
+            document.getElementById('bmi_input').value = data.bmi;
+            document.getElementById('age_input').value = data.age;
+            document.getElementById('bp_input').value = data.bp;
+            document.getElementById('insulin_input').value = data.insulin;
+
+            // Update all status dots
+            updateInputStatus('glucose', data.glucose);
+            updateInputStatus('bmi', data.bmi);
+            updateInputStatus('age', data.age);
+            updateInputStatus('bp', data.bp);
+            updateInputStatus('insulin', data.insulin);
+        }
+
+        // ─── Live Input Status Indicators ───
+        function updateInputStatus(field, value) {
+            const dot = document.getElementById(field + '_dot');
+            if (!dot) return;
+            const val = parseFloat(value);
+            if (isNaN(val)) { dot.className = 'input-status-dot ms-1'; return; }
+
+            let status = 'normal';
+            if (field === 'glucose') {
+                if (val >= 126) status = 'high';
+                else if (val >= 100) status = 'elevated';
+            } else if (field === 'bmi') {
+                if (val >= 30) status = 'high';
+                else if (val >= 25) status = 'elevated';
+            } else if (field === 'age') {
+                if (val >= 60) status = 'high';
+                else if (val >= 45) status = 'elevated';
+            } else if (field === 'bp') {
+                if (val >= 90) status = 'high';
+                else if (val >= 80) status = 'elevated';
+            } else if (field === 'insulin') {
+                if (val >= 150) status = 'high';
+                else if (val >= 100) status = 'elevated';
+            }
+
+            dot.className = 'input-status-dot ms-1 ' + status;
+        }
+
+        // Initialize dots on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            ['glucose', 'bmi', 'age', 'bp', 'insulin'].forEach(field => {
+                const input = document.getElementById(field + '_input');
+                if (input && input.value) updateInputStatus(field, input.value);
+            });
+        });
+
+        // ─── History Search ───
+        function filterHistoryTable() {
+            const input = document.getElementById("historySearchInput");
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById("historyTable");
+            if (!table) return;
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                const td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    const txtValue = td.textContent || td.innerText;
+                    tr[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        // ─── Drag & Drop for CSV ───
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropzone = document.getElementById('dropzone');
+            if (dropzone) {
+                ['dragenter', 'dragover'].forEach(event => {
+                    dropzone.addEventListener(event, (e) => {
+                        e.preventDefault();
+                        dropzone.classList.add('dragover');
+                    });
+                });
+                ['dragleave', 'drop'].forEach(event => {
+                    dropzone.addEventListener(event, () => {
+                        dropzone.classList.remove('dragover');
+                    });
+                });
+            }
+        });
+
+        // ─── Auto-switch to batch tab if results present ───
+        {% if batch_records or batch_summary %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const batchTab = document.getElementById('batch-tab');
+            if (batchTab) {
+                const tab = new bootstrap.Tab(batchTab);
+                tab.show();
+            }
+        });
+        {% endif %}
+    </script>
+
+</body>
+</html>
